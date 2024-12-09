@@ -6,7 +6,7 @@
 
 static std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
 
-// »Øµ÷º¯Êı£¬ÓÃÓÚ½«²éÑ¯½á¹ûĞ´Èë CSV ÎÄ¼ş
+// å›è°ƒå‡½æ•°ï¼Œç”¨äºå°†æŸ¥è¯¢ç»“æœå†™å…¥ CSV æ–‡ä»¶
 int callback(void* data, int argc, char** argv, char** azColName) {
     std::ofstream* csv_file = (std::ofstream*)data;
 
@@ -47,27 +47,27 @@ int get_person_info(sqlite3* db, const std::string& id_card_number) {
     sqlite3_stmt* stmt;
     const char* sql = "SELECT name, gender, birth_date, address, phone FROM person_info WHERE id_card_number = ?;";
 
-    // ×¼±¸ SQL Óï¾ä
+    // å‡†å¤‡ SQL è¯­å¥
     int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
     if (rc != SQLITE_OK) {
         std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
         return rc;
     }
 
-    // °ó¶¨²éÑ¯²ÎÊı£¨Éí·İÖ¤ºÅÂë£©
+    // ç»‘å®šæŸ¥è¯¢å‚æ•°ï¼ˆèº«ä»½è¯å·ç ï¼‰
     sqlite3_bind_text(stmt, 1, id_card_number.c_str(), -1, SQLITE_STATIC);
 
-    // Ö´ĞĞ²éÑ¯²¢»ñÈ¡½á¹û
+    // æ‰§è¡ŒæŸ¥è¯¢å¹¶è·å–ç»“æœ
     rc = sqlite3_step(stmt);
     if (rc == SQLITE_ROW) {
-        // »ñÈ¡²éÑ¯½á¹û
+        // è·å–æŸ¥è¯¢ç»“æœ
         const char* name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
         const char* gender = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
         const char* birth_date = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
         const char* address = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
         const char* phone = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
 
-        // Êä³ö²éÑ¯½á¹û
+        // è¾“å‡ºæŸ¥è¯¢ç»“æœ
         std::cout << "Name: " << converter.from_bytes(name).c_str() << std::endl;
         std::cout << "Gender: " << converter.from_bytes(gender).c_str() << std::endl;
         std::cout << "Birth Date: " << converter.from_bytes(birth_date).c_str() << std::endl;
@@ -78,7 +78,7 @@ int get_person_info(sqlite3* db, const std::string& id_card_number) {
         std::cerr << "No record found for ID card number: " << id_card_number << std::endl;
     }
 
-    // ÊÍ·Å SQL Óï¾ä×ÊÔ´
+    // é‡Šæ”¾ SQL è¯­å¥èµ„æº
     sqlite3_finalize(stmt);
 
     return rc;
@@ -213,25 +213,18 @@ int main() {
     }
 
     if (rc != SQLITE_OK) {
-        std::cerr << "SQL Ö´ĞĞÊ§°Ü: " << errMsg << std::endl;
+        std::cerr << "SQL æ‰§è¡Œå¤±è´¥: " << errMsg << std::endl;
         sqlite3_free(errMsg);
     }
 
     std::ofstream csv_file("DataBase/person_info.csv", std::ios::out | std::ios::binary);
     if (!csv_file.is_open()) {
-        std::cerr << "ÎŞ·¨´´½¨ CSV ÎÄ¼ş" << std::endl;
+        std::cerr << "æ— æ³•åˆ›å»º CSV æ–‡ä»¶" << std::endl;
         sqlite3_close(db);
         return 1;
     }
 
-    // Ğ´Èë UTF-8 BOM£¨×Ö½ÚË³Ğò±ê¼Ç£©
-    unsigned char utf8_bom[3] = { 0xEF, 0xBB, 0xBF };
-    csv_file.write(reinterpret_cast<char*>(utf8_bom), 3);
-
-    // ²éÑ¯Êı¾İ¿â
-    const char* sql = "SELECT * FROM person_info";  // ÄãĞèÒªµ¼³öµÄ±íµÄÃû×Ö
-    rc = sqlite3_exec(db, sql, callback, (void*)&csv_file, &errMsg);
-    //²åÈëÊı¾İ
+    //æ’å…¥æ•°æ®
 
     /*std::wstring id_card_number, name, gender, birth_date, address, phone;
     std::wcin >> id_card_number >> name >> gender >> birth_date >> address >> phone;
@@ -239,8 +232,18 @@ int main() {
     insert_person_info(db, converter.to_bytes(id_card_number), converter.to_bytes(name),
         converter.to_bytes(gender), converter.to_bytes(birth_date), converter.to_bytes(address), converter.to_bytes(phone));*/
 
-    // ²éÑ¯Êı¾İ
-    query_person_info(db, "232303200503177016");
+    // æŸ¥è¯¢æ•°æ®
+    // insert_person_info(db, "232303200503177016","è‹èˆª", "Male", "2005-03-17", "åå—ç†å·¥å¤§å­¦", "123456");
+    query_person_info(db, "873557964055422531");
+
+
+    // å†™å…¥ UTF-8 BOMï¼ˆå­—èŠ‚é¡ºåºæ ‡è®°ï¼‰
+    unsigned char utf8_bom[3] = { 0xEF, 0xBB, 0xBF };
+    csv_file.write(reinterpret_cast<char*>(utf8_bom), 3);
+
+    // æŸ¥è¯¢æ•°æ®åº“
+    const char* sql = "SELECT * FROM person_info";  // ä½ éœ€è¦å¯¼å‡ºçš„è¡¨çš„åå­—
+    rc = sqlite3_exec(db, sql, callback, (void*)&csv_file, &errMsg);
 
     sqlite3_close(db);
     csv_file.close();
