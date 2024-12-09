@@ -40,7 +40,11 @@ def generate_phone_number():
     return prefix + ''.join([str(random.randint(0, 9)) for _ in range(9)])
 
 
-# 生成并插入随机数据，生成CSV文件
+# 将中文数据转换为GBK编码并存储
+def convert_to_gbk(text):
+    return text.encode('gbk', errors='ignore')  # 编码为GBK，忽略编码错误
+
+# 生成并插入随机数据
 def generate_and_insert_data(num_records):
     data_to_insert = []
     data_for_csv = []  # 用于存储 CSV 数据
@@ -50,10 +54,19 @@ def generate_and_insert_data(num_records):
         check_code = calculate_check_code(id_card_number)
         id_card = id_card_number + check_code
         name = fake.name()  # 生成中文姓名
-        gender = random.choice(['Male', 'Female'])
-        birth_date = fake.date_of_birth(minimum_age=18, maximum_age=80).strftime('%Y-%m-%d')
+        last_digit = int(id_card_number[-1])
+        if last_digit % 2 == 0:
+            gender = "Female"
+        else:
+            gender = "Male"
+        sub_string = id_card[6:14]
+        birth_date = f"{sub_string[:4]}-{sub_string[4:6]}-{sub_string[6:]}"
         address = fake.address().replace('\n', ' ')  # 生成地址，并去除换行符
         phone = generate_phone_number()  # 生成符合中国标准的手机号
+
+        # 将数据转换为GBK编码
+        name = convert_to_gbk(name)
+        address = convert_to_gbk(address)
 
         # 将数据添加到待插入列表
         data_to_insert.append((id_card, name, gender, birth_date, address, phone))
@@ -67,18 +80,18 @@ def generate_and_insert_data(num_records):
     VALUES (?, ?, ?, ?, ?, ?)
     ''', data_to_insert)
 
-    # 提交事务
-    conn.commit()
-
-    # 写入 CSV 文件（编码为 GBK）
-    with open('ID_CARD/DataBase/person_info.csv', mode='w', newline='', encoding='utf-8') as file:
+    with open('ID_CARD/DataBase/person_info.csv', mode='w', newline='', encoding='gbk') as file:
         writer = csv.writer(file)
         writer.writerow(['id_card_number', 'name', 'gender', 'birth_date', 'address', 'phone'])  # 写入表头
         writer.writerows(data_for_csv)  # 写入数据
 
+    # 提交事务
+    conn.commit()
+
+    # 写入 CSV 文件（编码为 GBK）
 
 # 生成 100,000 条记录
-generate_and_insert_data(100000)
+generate_and_insert_data(120000)
 
 # 完成后关闭数据库连接
 conn.close()
